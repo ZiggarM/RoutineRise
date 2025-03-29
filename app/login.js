@@ -1,14 +1,22 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, SafeAreaView, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Header from './components/Header';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter both email and password');
+      return;
+    }
+
     try {
+      setLoading(true);
       // Mock login - in a real app, this would be an API call
       if (email && password) {
         // Create mock user data
@@ -32,19 +40,23 @@ export default function LoginScreen() {
       }
     } catch (error) {
       console.error('Login error:', error);
+      Alert.alert('Error', 'Failed to login. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100">
-      <View className="flex-1 px-6 justify-center">
-        <Text className="text-3xl font-bold text-center text-indigo-600 mb-8">
-          RoutineRise
+    <SafeAreaView style={styles.container}>
+      <Header title="Login" showBackButton={true} />
+      <View style={styles.content}>
+        <Text style={styles.title}>
+          Welcome Back
         </Text>
         
-        <View className="space-y-4">
+        <View style={styles.form}>
           <TextInput
-            className="bg-white p-4 rounded-lg border border-gray-200"
+            style={styles.input}
             placeholder="Email"
             value={email}
             onChangeText={setEmail}
@@ -53,7 +65,7 @@ export default function LoginScreen() {
           />
           
           <TextInput
-            className="bg-white p-4 rounded-lg border border-gray-200"
+            style={styles.input}
             placeholder="Password"
             value={password}
             onChangeText={setPassword}
@@ -61,19 +73,20 @@ export default function LoginScreen() {
           />
           
           <TouchableOpacity
-            className="bg-indigo-600 p-4 rounded-lg"
+            style={styles.loginButton}
             onPress={handleLogin}
+            disabled={loading}
           >
-            <Text className="text-white text-center font-semibold text-lg">
-              Login
+            <Text style={styles.loginButtonText}>
+              {loading ? 'Logging in...' : 'Login'}
             </Text>
           </TouchableOpacity>
           
           <TouchableOpacity
-            className="mt-4"
+            style={styles.registerLink}
             onPress={() => router.push('/register')}
           >
-            <Text className="text-indigo-600 text-center">
+            <Text style={styles.registerLinkText}>
               Don't have an account? Sign up
             </Text>
           </TouchableOpacity>
@@ -82,3 +95,54 @@ export default function LoginScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+  },
+  content: {
+    flex: 1,
+    padding: 24,
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 32,
+    textAlign: 'center',
+  },
+  form: {
+    width: '100%',
+  },
+  input: {
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+    fontSize: 16,
+  },
+  loginButton: {
+    backgroundColor: '#4F46E5',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  loginButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  registerLink: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  registerLinkText: {
+    color: '#4F46E5',
+    fontSize: 16,
+  },
+});

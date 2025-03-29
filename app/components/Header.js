@@ -1,12 +1,9 @@
+import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function Header({ title, showBackButton = false, showLogoutButton = false }) {
-  const handleBack = () => {
-    router.back();
-  };
-
+export default function Header({ title, showLogoutButton = false }) {
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('user');
@@ -16,11 +13,18 @@ export default function Header({ title, showBackButton = false, showLogoutButton
     }
   };
 
+  const handleGoBack = () => {
+    router.back();
+  };
+
   return (
-    <View style={styles.container}>
+    <View style={styles.header}>
       <View style={styles.leftContainer}>
-        {showBackButton && (
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+        {router.canGoBack() && (
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={handleGoBack}
+          >
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
         )}
@@ -30,7 +34,10 @@ export default function Header({ title, showBackButton = false, showLogoutButton
       
       <View style={styles.rightContainer}>
         {showLogoutButton && (
-          <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+          <TouchableOpacity 
+            style={styles.logoutButton}
+            onPress={handleLogout}
+          >
             <Text style={styles.logoutButtonText}>Logout</Text>
           </TouchableOpacity>
         )}
@@ -40,13 +47,15 @@ export default function Header({ title, showBackButton = false, showLogoutButton
 }
 
 const styles = StyleSheet.create({
-  container: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#4F46E5',
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   leftContainer: {
     width: 60,
@@ -59,23 +68,22 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: 'white',
-    textAlign: 'center',
+    color: '#1F2937',
   },
   backButton: {
-    padding: 4,
+    padding: 8,
   },
   backButtonText: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: 'white',
+    color: '#4F46E5',
   },
   logoutButton: {
-    padding: 4,
+    padding: 8,
   },
   logoutButtonText: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: 'white',
+    color: '#EF4444',
+    fontWeight: '500',
   },
 });

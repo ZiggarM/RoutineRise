@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Header from './components/Header';
 
 const goalOptions = [
   {
@@ -45,18 +46,19 @@ const goalOptions = [
 const GoalCard = ({ goal, selected, onSelect }) => {
   return (
     <TouchableOpacity
-      className={`p-4 rounded-lg mb-4 border-2 ${
-        selected ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200 bg-white'
-      }`}
+      style={[
+        styles.goalCard,
+        selected && styles.goalCardSelected
+      ]}
       onPress={() => onSelect(goal.id)}
     >
-      <View className="flex-row items-center">
-        <View className="w-12 h-12 bg-gray-100 rounded-full items-center justify-center mr-4">
-          <Text className="text-2xl">{goal.icon}</Text>
+      <View style={styles.goalCardContent}>
+        <View style={styles.goalIcon}>
+          <Text style={styles.goalIconText}>{goal.icon}</Text>
         </View>
-        <View className="flex-1">
-          <Text className="font-semibold text-lg mb-1">{goal.title}</Text>
-          <Text className="text-gray-600">{goal.description}</Text>
+        <View style={styles.goalInfo}>
+          <Text style={styles.goalTitle}>{goal.title}</Text>
+          <Text style={styles.goalDescription}>{goal.description}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -65,6 +67,7 @@ const GoalCard = ({ goal, selected, onSelect }) => {
 
 export default function GoalSelectionScreen() {
   const [selectedGoals, setSelectedGoals] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const handleGoalSelect = (goalId) => {
     if (selectedGoals.includes(goalId)) {
@@ -75,7 +78,13 @@ export default function GoalSelectionScreen() {
   };
 
   const handleContinue = async () => {
+    if (selectedGoals.length === 0) {
+      Alert.alert('Error', 'Please select at least one goal');
+      return;
+    }
+    
     try {
+      setLoading(true);
       // Save selected goals
       await AsyncStorage.setItem('selectedGoals', JSON.stringify(selectedGoals));
       // Mark that user has selected goals
@@ -84,17 +93,21 @@ export default function GoalSelectionScreen() {
       router.replace('/(tabs)/home');
     } catch (error) {
       console.error('Error saving goals:', error);
+      Alert.alert('Error', 'Failed to save goals. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100">
-      <ScrollView className="flex-1 px-4">
-        <View className="py-8">
-          <Text className="text-3xl font-bold text-center mb-2">
-            Select Your Goals
+    <SafeAreaView style={styles.container}>
+      <Header title="Select Goals" showBackButton={false} />
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.content}>
+          <Text style={styles.title}>
+            What are your goals?
           </Text>
-          <Text className="text-gray-600 text-center mb-8">
+          <Text style={styles.subtitle}>
             Choose the goals you want to work towards
           </Text>
 
@@ -108,14 +121,15 @@ export default function GoalSelectionScreen() {
           ))}
 
           <TouchableOpacity
-            className={`p-4 rounded-lg mt-6 ${
-              selectedGoals.length > 0 ? 'bg-indigo-600' : 'bg-gray-300'
-            }`}
+            style={[
+              styles.continueButton,
+              selectedGoals.length === 0 && styles.continueButtonDisabled
+            ]}
             onPress={handleContinue}
-            disabled={selectedGoals.length === 0}
+            disabled={selectedGoals.length === 0 || loading}
           >
-            <Text className="text-white text-center font-semibold text-lg">
-              Continue
+            <Text style={styles.continueButtonText}>
+              {loading ? 'Saving...' : 'Continue'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -123,3 +137,87 @@ export default function GoalSelectionScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    padding: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  goalCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    padding: 16,
+    marginBottom: 12,
+  },
+  goalCardSelected: {
+    borderColor: '#4F46E5',
+    backgroundColor: 'rgba(79, 70, 229, 0.05)',
+  },
+  goalCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  goalIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  goalIconText: {
+    fontSize: 24,
+  },
+  goalInfo: {
+    flex: 1,
+  },
+  goalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  goalDescription: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  continueButton: {
+    backgroundColor: '#4F46E5',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 24,
+  },
+  continueButtonDisabled: {
+    backgroundColor: '#9CA3AF',
+  },
+  continueButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

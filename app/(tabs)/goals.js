@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, SafeAreaView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, SafeAreaView, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../components/Header';
 
 const GoalCard = ({ goal, onPress }) => {
-  const progressWidth = `${goal.progress}%`;
-  
   return (
     <TouchableOpacity 
       style={styles.card}
@@ -16,7 +15,7 @@ const GoalCard = ({ goal, onPress }) => {
       
       <View style={styles.progressBarContainer}>
         <View 
-          style={[styles.progressBar, { width: progressWidth }]}
+          style={[styles.progressBar, { width: `${goal.progress}%` }]}
         />
       </View>
       
@@ -34,10 +33,23 @@ export default function GoalsScreen() {
     title: '',
     description: '',
   });
+  const [loading, setLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
 
   useEffect(() => {
-    const loadGoals = async () => {
+    const checkAuthAndLoadGoals = async () => {
       try {
+        setLoading(true);
+        // Check authentication
+        const userJSON = await AsyncStorage.getItem('user');
+        if (!userJSON) {
+          // User is not authenticated, redirect to login
+          router.replace('/login');
+          return;
+        }
+        
+        setAuthenticated(true);
+        
         // Load selected goals from goal selection
         const selectedGoalsJSON = await AsyncStorage.getItem('selectedGoals');
         if (selectedGoalsJSON) {
@@ -92,45 +104,63 @@ export default function GoalsScreen() {
         }
       } catch (error) {
         console.error('Error loading goals:', error);
+      } finally {
+        setLoading(false);
       }
     };
     
-    loadGoals();
+    checkAuthAndLoadGoals();
   }, []);
 
   const handleAddGoal = async () => {
-    if (!newGoal.title.trim()) return;
+    if (!newGoal.title.trim()) {
+      Alert.alert('Error', 'Please enter a goal title');
+      return;
+    }
 
-    // Create new goal
-    const goal = {
-      id: Date.now().toString(),
-      ...newGoal,
-      progress: 0,
-    };
-
-    const updatedGoals = [...goals, goal];
-    setGoals(updatedGoals);
-    
-    // Save updated goals
     try {
+      // Create new goal
+      const goal = {
+        id: Date.now().toString(),
+        ...newGoal,
+        progress: 0,
+      };
+
+      const updatedGoals = [...goals, goal];
+      setGoals(updatedGoals);
+      
+      // Save updated goals
       const selectedGoalsJSON = await AsyncStorage.getItem('selectedGoals');
       if (selectedGoalsJSON) {
         const selectedGoalIds = JSON.parse(selectedGoalsJSON);
         selectedGoalIds.push(goal.id);
         await AsyncStorage.setItem('selectedGoals', JSON.stringify(selectedGoalIds));
       }
+      
+      setNewGoal({ title: '', description: '' });
+      setShowAddGoal(false);
     } catch (error) {
       console.error('Error saving goal:', error);
+      Alert.alert('Error', 'Failed to save goal. Please try again.');
     }
-    
-    setNewGoal({ title: '', description: '' });
-    setShowAddGoal(false);
   };
 
   const handleGoalPress = (goal) => {
     // In a real app, this would navigate to goal details
-    console.log('Goal pressed:', goal);
+    Alert.alert('Goal Details', `${goal.title}\n\nProgress: ${goal.progress}%`);
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4F46E5" />
+      </View>
+    );
+  }
+
+  if (!authenticated) {
+    return null; // Will redirect to login in useEffect
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -215,6 +245,12 @@ export default function GoalsScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F3F4F6',

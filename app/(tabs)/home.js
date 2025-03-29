@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, StyleSheet, ActivityIndicator } from 'react-native';
+import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../components/Header';
 
@@ -54,54 +55,65 @@ export default function HomeScreen() {
     total: 0,
     completed: 0,
   });
+  const [loading, setLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
 
   useEffect(() => {
-    const loadUser = async () => {
+    const checkAuth = async () => {
       try {
+        setLoading(true);
         const userJSON = await AsyncStorage.getItem('user');
+        
         if (userJSON) {
-          setUser(JSON.parse(userJSON));
+          const userData = JSON.parse(userJSON);
+          setUser(userData);
+          setAuthenticated(true);
+          
+          // Load mock tasks
+          const mockTasks = [
+            {
+              id: '1',
+              title: 'Complete a coding challenge',
+              description: 'Solve one programming problem on LeetCode or similar platform',
+              difficulty: 'Medium',
+              points: 20,
+              completed: false,
+            },
+            {
+              id: '2',
+              title: 'Read documentation',
+              description: 'Spend 30 minutes reading React Native documentation',
+              difficulty: 'Easy',
+              points: 10,
+              completed: false,
+            },
+            {
+              id: '3',
+              title: 'Build a small project',
+              description: 'Create a simple app using what you learned today',
+              difficulty: 'Hard',
+              points: 30,
+              completed: false,
+            },
+          ];
+          
+          setTasks(mockTasks);
+          setProgress({
+            total: mockTasks.length,
+            completed: mockTasks.filter(t => t.completed).length,
+          });
+        } else {
+          // User is not authenticated, redirect to login
+          router.replace('/login');
         }
       } catch (error) {
-        console.error('Error loading user:', error);
+        console.error('Error checking auth:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadUser();
-    
-    // Load mock tasks
-    const mockTasks = [
-      {
-        id: '1',
-        title: 'Complete a coding challenge',
-        description: 'Solve one programming problem on LeetCode or similar platform',
-        difficulty: 'Medium',
-        points: 20,
-        completed: false,
-      },
-      {
-        id: '2',
-        title: 'Read documentation',
-        description: 'Spend 30 minutes reading React Native documentation',
-        difficulty: 'Easy',
-        points: 10,
-        completed: false,
-      },
-      {
-        id: '3',
-        title: 'Build a small project',
-        description: 'Create a simple app using what you learned today',
-        difficulty: 'Hard',
-        points: 30,
-        completed: false,
-      },
-    ];
-    
-    setTasks(mockTasks);
-    setProgress({
-      total: mockTasks.length,
-      completed: mockTasks.filter(t => t.completed).length,
-    });
+    checkAuth();
   }, []);
 
   const handleCompleteTask = async (taskId) => {
@@ -128,6 +140,18 @@ export default function HomeScreen() {
       await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
     }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4F46E5" />
+      </View>
+    );
+  }
+
+  if (!authenticated) {
+    return null; // Will redirect to login in useEffect
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -169,6 +193,12 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F3F4F6',

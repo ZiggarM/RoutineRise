@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../components/Header';
@@ -33,22 +33,31 @@ export default function ProfileScreen() {
     currentStreak: 0,
   });
   const [achievements, setAchievements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
 
   useEffect(() => {
-    const loadUserData = async () => {
+    const checkAuthAndLoadData = async () => {
       try {
+        setLoading(true);
         const userJSON = await AsyncStorage.getItem('user');
-        if (userJSON) {
-          const userData = JSON.parse(userJSON);
-          setUser(userData);
-          
-          // Update stats based on user data
-          setStats({
-            totalPoints: userData.points || 0,
-            completedTasks: 0, // This would come from the backend in a real app
-            currentStreak: 0, // This would come from the backend in a real app
-          });
+        
+        if (!userJSON) {
+          // User is not authenticated, redirect to login
+          router.replace('/login');
+          return;
         }
+        
+        const userData = JSON.parse(userJSON);
+        setUser(userData);
+        setAuthenticated(true);
+        
+        // Update stats based on user data
+        setStats({
+          totalPoints: userData.points || 0,
+          completedTasks: 0, // This would come from the backend in a real app
+          currentStreak: 0, // This would come from the backend in a real app
+        });
         
         // Mock achievements
         setAchievements([
@@ -73,22 +82,50 @@ export default function ProfileScreen() {
         ]);
       } catch (error) {
         console.error('Error loading user data:', error);
+      } finally {
+        setLoading(false);
       }
     };
     
-    loadUserData();
+    checkAuthAndLoadData();
   }, []);
 
   const handleLogout = async () => {
     try {
-      // Clear user data but keep goals
-      await AsyncStorage.removeItem('user');
-      // Navigate to login screen
-      router.replace('/login');
+      Alert.alert(
+        "Logout",
+        "Are you sure you want to logout?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Logout",
+            onPress: async () => {
+              await AsyncStorage.removeItem('user');
+              router.replace('/login');
+            },
+            style: "destructive"
+          }
+        ]
+      );
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4F46E5" />
+      </View>
+    );
+  }
+
+  if (!authenticated) {
+    return null; // Will redirect to login in useEffect
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -131,6 +168,12 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F3F4F6',

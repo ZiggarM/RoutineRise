@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, SafeAreaView, ScrollView, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Header from './components/Header';
 
 export default function RegisterScreen() {
   const [formData, setFormData] = useState({
@@ -10,46 +11,56 @@ export default function RegisterScreen() {
     password: '',
     confirmPassword: '',
   });
+  const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
+    // Validate form data
+    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+    
     if (formData.password !== formData.confirmPassword) {
-      // Add error handling for password mismatch
-      alert('Passwords do not match');
+      Alert.alert('Error', 'Passwords do not match');
       return;
     }
     
     try {
-      if (formData.email && formData.password && formData.name) {
-        // Create mock user data
-        const newUser = {
-          id: '1',
-          name: formData.name,
-          email: formData.email,
-          points: 0,
-        };
-        
-        // Store user data in AsyncStorage
-        await AsyncStorage.setItem('user', JSON.stringify(newUser));
-        
-        // Navigate to goal selection
-        router.replace('/goal-selection');
-      }
+      setLoading(true);
+      
+      // Create mock user data
+      const newUser = {
+        id: '1',
+        name: formData.name,
+        email: formData.email,
+        points: 0,
+      };
+      
+      // Store user data in AsyncStorage
+      await AsyncStorage.setItem('user', JSON.stringify(newUser));
+      
+      // Navigate to goal selection
+      router.replace('/goal-selection');
     } catch (error) {
       console.error('Registration error:', error);
+      Alert.alert('Error', 'Failed to register. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100">
-      <ScrollView className="flex-1 px-6">
-        <View className="py-12">
-          <Text className="text-3xl font-bold text-center text-indigo-600 mb-8">
-            Create Account
+    <SafeAreaView style={styles.container}>
+      <Header title="Create Account" showBackButton={true} />
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.content}>
+          <Text style={styles.title}>
+            Join RoutineRise
           </Text>
           
-          <View className="space-y-4">
+          <View style={styles.form}>
             <TextInput
-              className="bg-white p-4 rounded-lg border border-gray-200"
+              style={styles.input}
               placeholder="Full Name"
               value={formData.name}
               onChangeText={(text) => setFormData({ ...formData, name: text })}
@@ -57,7 +68,7 @@ export default function RegisterScreen() {
             />
             
             <TextInput
-              className="bg-white p-4 rounded-lg border border-gray-200"
+              style={styles.input}
               placeholder="Email"
               value={formData.email}
               onChangeText={(text) => setFormData({ ...formData, email: text })}
@@ -66,7 +77,7 @@ export default function RegisterScreen() {
             />
             
             <TextInput
-              className="bg-white p-4 rounded-lg border border-gray-200"
+              style={styles.input}
               placeholder="Password"
               value={formData.password}
               onChangeText={(text) => setFormData({ ...formData, password: text })}
@@ -74,7 +85,7 @@ export default function RegisterScreen() {
             />
             
             <TextInput
-              className="bg-white p-4 rounded-lg border border-gray-200"
+              style={styles.input}
               placeholder="Confirm Password"
               value={formData.confirmPassword}
               onChangeText={(text) => setFormData({ ...formData, confirmPassword: text })}
@@ -82,19 +93,20 @@ export default function RegisterScreen() {
             />
             
             <TouchableOpacity
-              className="bg-indigo-600 p-4 rounded-lg mt-4"
+              style={styles.registerButton}
               onPress={handleRegister}
+              disabled={loading}
             >
-              <Text className="text-white text-center font-semibold text-lg">
-                Register
+              <Text style={styles.registerButtonText}>
+                {loading ? 'Creating Account...' : 'Register'}
               </Text>
             </TouchableOpacity>
             
             <TouchableOpacity
-              className="mt-4"
+              style={styles.loginLink}
               onPress={() => router.push('/login')}
             >
-              <Text className="text-indigo-600 text-center">
+              <Text style={styles.loginLinkText}>
                 Already have an account? Sign in
               </Text>
             </TouchableOpacity>
@@ -104,3 +116,57 @@ export default function RegisterScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    padding: 24,
+    paddingTop: 16,
+    paddingBottom: 40,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  form: {
+    width: '100%',
+  },
+  input: {
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+    fontSize: 16,
+  },
+  registerButton: {
+    backgroundColor: '#4F46E5',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  registerButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  loginLink: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  loginLinkText: {
+    color: '#4F46E5',
+    fontSize: 16,
+  },
+});

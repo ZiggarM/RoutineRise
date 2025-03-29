@@ -1,9 +1,11 @@
-import { useEffect } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, SafeAreaView, ActivityIndicator, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function WelcomeScreen() {
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     // Check if user is already logged in
     const checkAuth = async () => {
@@ -18,45 +20,57 @@ export default function WelcomeScreen() {
           } else {
             router.replace('/goal-selection');
           }
+        } else {
+          // User is not logged in, show welcome screen
+          setLoading(false);
         }
       } catch (error) {
         console.error('Error checking auth:', error);
+        setLoading(false);
       }
     };
     
     checkAuth();
   }, []);
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4F46E5" />
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaView className="flex-1 bg-gray-100">
-      <View className="flex-1 px-6 justify-center items-center">
-        <View className="w-24 h-24 bg-indigo-600 rounded-full items-center justify-center mb-6">
-          <Text className="text-white text-4xl font-bold">RR</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <View style={styles.logoContainer}>
+          <Text style={styles.logoText}>RR</Text>
         </View>
         
-        <Text className="text-3xl font-bold text-center text-indigo-600 mb-2">
+        <Text style={styles.title}>
           RoutineRise
         </Text>
         
-        <Text className="text-gray-600 text-center mb-12">
+        <Text style={styles.subtitle}>
           Build better habits, achieve your goals
         </Text>
         
-        <View className="w-full space-y-4">
+        <View style={styles.buttonContainer}>
           <TouchableOpacity
-            className="bg-indigo-600 p-4 rounded-lg"
+            style={styles.loginButton}
             onPress={() => router.push('/login')}
           >
-            <Text className="text-white text-center font-semibold text-lg">
+            <Text style={styles.loginButtonText}>
               Login
             </Text>
           </TouchableOpacity>
           
           <TouchableOpacity
-            className="bg-white border border-indigo-600 p-4 rounded-lg"
+            style={styles.registerButton}
             onPress={() => router.push('/register')}
           >
-            <Text className="text-indigo-600 text-center font-semibold text-lg">
+            <Text style={styles.registerButtonText}>
               Create Account
             </Text>
           </TouchableOpacity>
@@ -65,3 +79,77 @@ export default function WelcomeScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+  },
+  content: {
+    flex: 1,
+    padding: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoContainer: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: '#4F46E5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  logoText: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#4F46E5',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 18,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 48,
+  },
+  buttonContainer: {
+    width: '100%',
+  },
+  loginButton: {
+    backgroundColor: '#4F46E5',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  loginButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  registerButton: {
+    backgroundColor: 'white',
+    borderWidth: 2,
+    borderColor: '#4F46E5',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+  },
+  registerButtonText: {
+    color: '#4F46E5',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+});
