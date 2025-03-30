@@ -9,11 +9,15 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleLogin = async () => {
     try {
+      // Reset error
+      setError('');
+
       if (!email || !password) {
-        Alert.alert('Error', 'Please enter both email and password');
+        setError('Please enter both email and password');
         return;
       }
 
@@ -34,7 +38,7 @@ export default function LoginScreen() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Invalid credentials');
+        throw new Error(data.message || 'Login failed');
       }
 
       // Store token and user data in AsyncStorage
@@ -50,7 +54,7 @@ export default function LoginScreen() {
       }
     } catch (error) {
       console.error('Login error:', error);
-      Alert.alert('Error', error.message || 'Failed to login. Please try again.');
+      setError(error.message || 'Failed to login. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -63,6 +67,12 @@ export default function LoginScreen() {
         <Text style={styles.title}>
           Welcome Back
         </Text>
+        
+        {error && (
+          <Text style={styles.errorText}>
+            {error}
+          </Text>
+        )}
         
         <View style={styles.form}>
           <TextInput
@@ -122,6 +132,12 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     marginBottom: 32,
     textAlign: 'center',
+  },
+  errorText: {
+    color: '#EF4444',
+    textAlign: 'center',
+    marginBottom: 16,
+    fontSize: 16,
   },
   form: {
     width: '100%',

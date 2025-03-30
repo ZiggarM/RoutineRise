@@ -13,17 +13,21 @@ export default function RegisterScreen() {
     confirmPassword: '',
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleRegister = async () => {
     try {
+      // Reset error
+      setError('');
+
       // Validate form data
       if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
-        Alert.alert('Error', 'Please fill in all fields');
+        setError('Please fill in all fields');
         return;
       }
       
       if (formData.password !== formData.confirmPassword) {
-        Alert.alert('Error', 'Passwords do not match');
+        setError('Passwords do not match');
         return;
       }
 
@@ -56,7 +60,7 @@ export default function RegisterScreen() {
       router.replace('/goal-selection');
     } catch (error) {
       console.error('Registration error:', error);
-      Alert.alert('Error', error.message || 'Failed to register. Please try again.');
+      setError(error.message || 'Failed to register. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -70,6 +74,12 @@ export default function RegisterScreen() {
           <Text style={styles.title}>
             Join RoutineRise
           </Text>
+          
+          {error && (
+            <Text style={styles.errorText}>
+              {error}
+            </Text>
+          )}
           
           <View style={styles.form}>
             <TextInput
@@ -149,6 +159,12 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     marginBottom: 24,
     textAlign: 'center',
+  },
+  errorText: {
+    color: '#EF4444',
+    textAlign: 'center',
+    marginBottom: 16,
+    fontSize: 16,
   },
   form: {
     width: '100%',
