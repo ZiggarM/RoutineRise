@@ -19,6 +19,20 @@ A React Native mobile application designed to help users build positive habits a
 - Authentication: JWT
 - Styling: TailwindCSS (NativeWind)
 
+## Environment Setup
+
+To run this project, you'll need to set up your environment variables. Copy the `.env.example` file to `.env` and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+Then edit the `.env` file with your specific values:
+
+- `MONGODB_URI`: Your MongoDB connection string
+- `JWT_SECRET`: A secure secret key for JWT tokens
+- `API_BASE_URL`: Your API server URL
+
 ## Getting Started
 
 1. Install dependencies:
@@ -55,3 +69,9 @@ A React Native mobile application designed to help users build positive habits a
 - Users: Store user information and authentication
 - Goals: User's life goals and progress
 - Tasks: Daily tasks generated based on goals
+
+## Security
+
+- Never commit your `.env` file
+- Use different secrets for development and production
+- Keep your MongoDB credentials secure

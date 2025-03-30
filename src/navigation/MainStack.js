@@ -70,11 +70,31 @@ function MainTabs() {
 }
 
 // Main stack with initial goal selection and tabs
+import { useAuth } from '../context/AuthContext';
+
 export default function MainStack() {
+  const { user } = useAuth();
+
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="GoalSelection" component={GoalSelectionScreen} />
-      <Stack.Screen name="MainTabs" component={MainTabs} />
+      {user && !user.hasSelectedGoals ? (
+        <Stack.Screen 
+          name="GoalSelection" 
+          component={GoalSelectionScreen}
+          options={{
+            headerShown: true,
+            headerTitle: 'Select Goals'
+          }}
+        />
+      ) : (
+        <Stack.Screen 
+          name="MainTabs" 
+          component={MainTabs}
+          options={{
+            headerShown: false
+          }}
+        />
+      )}
     </Stack.Navigator>
   );
 }

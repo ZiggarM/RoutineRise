@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, SafeAreaView, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from './components/Header';
+import { ENV } from './config/env';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -10,37 +11,46 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password');
-      return;
-    }
-
     try {
+      if (!email || !password) {
+        Alert.alert('Error', 'Please enter both email and password');
+        return;
+      }
+
       setLoading(true);
-      // Mock login - in a real app, this would be an API call
-      if (email && password) {
-        // Create mock user data
-        const userData = {
-          id: '1',
-          name: email.split('@')[0],
+      
+      // Make API call to login
+      const response = await fetch(`${ENV.API_BASE_URL}/api/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           email,
-          points: 120,
-        };
-        
-        // Store user data in AsyncStorage
-        await AsyncStorage.setItem('user', JSON.stringify(userData));
-        
-        // Check if user has selected goals before
-        const hasSelectedGoals = await AsyncStorage.getItem('hasSelectedGoals');
-        if (hasSelectedGoals === 'true') {
-          router.replace('/(tabs)/home');
-        } else {
-          router.replace('/goal-selection');
-        }
+          password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Invalid credentials');
+      }
+
+      // Store token and user data in AsyncStorage
+      await AsyncStorage.setItem('token', data.token);
+      await AsyncStorage.setItem('user', JSON.stringify(data.user));
+      
+      // Check if user has selected goals before
+      const hasSelectedGoals = await AsyncStorage.getItem('hasSelectedGoals');
+      if (hasSelectedGoals === 'true') {
+        router.replace('/(tabs)/home');
+      } else {
+        router.replace('/goal-selection');
       }
     } catch (error) {
       console.error('Login error:', error);
-      Alert.alert('Error', 'Failed to login. Please try again.');
+      Alert.alert('Error', error.message || 'Failed to login. Please try again.');
     } finally {
       setLoading(false);
     }

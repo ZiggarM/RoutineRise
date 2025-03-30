@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, SafeAreaView, ScrollView, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from './components/Header';
+import { ENV } from './config/env';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function RegisterScreen() {
   const [formData, setFormData] = useState({
@@ -14,36 +15,48 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    // Validate form data
-    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-    
-    if (formData.password !== formData.confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
-    
     try {
+      // Validate form data
+      if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+        Alert.alert('Error', 'Please fill in all fields');
+        return;
+      }
+      
+      if (formData.password !== formData.confirmPassword) {
+        Alert.alert('Error', 'Passwords do not match');
+        return;
+      }
+
       setLoading(true);
       
-      // Create mock user data
-      const newUser = {
-        id: '1',
-        name: formData.name,
-        email: formData.email,
-        points: 0,
-      };
-      
-      // Store user data in AsyncStorage
-      await AsyncStorage.setItem('user', JSON.stringify(newUser));
+      // Make API call to register user
+      const response = await fetch(`${ENV.API_BASE_URL}/api/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Registration failed');
+      }
+
+      // Store token and user data in AsyncStorage
+      await AsyncStorage.setItem('token', data.token);
+      await AsyncStorage.setItem('user', JSON.stringify(data.user));
       
       // Navigate to goal selection
       router.replace('/goal-selection');
     } catch (error) {
       console.error('Registration error:', error);
-      Alert.alert('Error', 'Failed to register. Please try again.');
+      Alert.alert('Error', error.message || 'Failed to register. Please try again.');
     } finally {
       setLoading(false);
     }
